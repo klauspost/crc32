@@ -5,6 +5,8 @@
 package crc32
 
 import (
+	"hash"
+	"hash/crc32"
 	"io"
 	"testing"
 )
@@ -81,16 +83,39 @@ func TestGolden(t *testing.T) {
 	}
 }
 
+func BenchmarkCrc1KB(b *testing.B) {
+	becnchmark(b, NewIEEE(), 1024)
+}
+
+func BenchmarkStdCrc1KB(b *testing.B) {
+	becnchmark(b, crc32.NewIEEE(), 1024)
+}
+
+func BenchmarkCrc8KB(b *testing.B) {
+	becnchmark(b, NewIEEE(), 8*1024)
+}
+
+func BenchmarkStdCrc8KB(b *testing.B) {
+	becnchmark(b, crc32.NewIEEE(), 8*1024)
+}
+
 func BenchmarkCrc32KB(b *testing.B) {
-	b.SetBytes(1024)
-	data := make([]byte, 1024)
+	becnchmark(b, NewIEEE(), 32*1024)
+}
+
+func BenchmarkStdCrc32KB(b *testing.B) {
+	becnchmark(b, crc32.NewIEEE(), 32*1024)
+}
+
+func becnchmark(b *testing.B, h hash.Hash32, n int64) {
+	b.SetBytes(n)
+	data := make([]byte, n)
 	for i := range data {
 		data[i] = byte(i)
 	}
-	h := NewIEEE()
 	in := make([]byte, 0, h.Size())
-
 	b.ResetTimer()
+
 	for i := 0; i < b.N; i++ {
 		h.Reset()
 		h.Write(data)
