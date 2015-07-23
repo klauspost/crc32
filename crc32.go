@@ -108,8 +108,11 @@ func update(crc uint32, tab *Table, p []byte) uint32 {
 
 // Update returns the result of adding the bytes in p to the crc.
 func Update(crc uint32, tab *Table, p []byte) uint32 {
-	if tab == castagnoliTable {
+	switch {
+	case tab == castagnoliTable:
 		return updateCastagnoli(crc, p)
+	case tab == IEEETable:
+		return updateIEEE(crc, p)
 	}
 	return update(crc, tab, p)
 }

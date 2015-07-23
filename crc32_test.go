@@ -82,8 +82,8 @@ func TestGolden(t *testing.T) {
 }
 
 func BenchmarkCrc32KB(b *testing.B) {
-	b.SetBytes(32 * 1024)
-	data := make([]byte, 32*1024)
+	b.SetBytes(1024)
+	data := make([]byte, 1024)
 	for i := range data {
 		data[i] = byte(i)
 	}

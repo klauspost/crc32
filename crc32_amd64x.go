@@ -9,14 +9,20 @@ package crc32
 // This file contains the code to call the SSE 4.2 version of the Castagnoli
 // CRC.
 
-// haveSSE42 is defined in crc_amd64.s and uses CPUID to test for SSE 4.2
-// support.
+// haveSSE41/haveSSE42 is defined in crc_amd64.s and uses CPUID to test
+// for SSE 4.1 and 4.2 support.
+func haveSSE41() bool
 func haveSSE42() bool
 
 // castagnoliSSE42 is defined in crc_amd64.s and uses the SSE4.2 CRC32
 // instruction.
 func castagnoliSSE42(crc uint32, p []byte) uint32
 
+// ieeeSSE42 is defined in crc_amd64.s and uses the SSE4.2 PCLMULQDQ
+// instruction.
+func ieeeSSE42(crc uint32, p []byte) uint32
+
+var sse41 = haveSSE41()
 var sse42 = haveSSE42()
 
 func updateCastagnoli(crc uint32, p []byte) uint32 {
@@ -24,4 +30,17 @@ func updateCastagnoli(crc uint32, p []byte) uint32 {
 		return castagnoliSSE42(crc, p)
 	}
 	return update(crc, castagnoliTable, p)
+}
+
+func updateIEEE(crc uint32, p []byte) uint32 {
+	if sse42 && sse41 && len(p) >= 64 {
+		left := len(p) & 15
+		do := len(p) - left
+		crc := ^ieeeSSE42(^crc, p[:do])
+		if left > 0 {
+			crc = update(crc, IEEETable, p[do:])
+		}
+		return crc
+	}
+	return update(crc, IEEETable, p)
 }

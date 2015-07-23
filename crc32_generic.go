@@ -12,3 +12,7 @@ package crc32
 func updateCastagnoli(crc uint32, p []byte) uint32 {
 	return update(crc, castagnoliTable, p)
 }
+
+func updateIEEE(crc uint32, p []byte) uint32 {
+	return update(crc, IEEETable, p)
+}
