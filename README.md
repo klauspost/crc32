@@ -3,6 +3,8 @@ CRC32 hash with x64 optimizations
 
 This package is a drop-in replacement for the standard library `hash/crc32` package, that features SSE 4.2 optimizations on x64 platforms, for a 10x speedup.
 
+[![Build Status](https://travis-ci.org/klauspost/crc32.svg?branch=master)](https://travis-ci.org/klauspost/crc32)
+
 # usage
 
 Install using `go get github.com/klauspost/crc32`. This library is based on Go 1.4.2 code and requires Go 1.3 or newer.
