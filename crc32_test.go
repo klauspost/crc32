@@ -84,30 +84,30 @@ func TestGolden(t *testing.T) {
 }
 
 func BenchmarkCrc1KB(b *testing.B) {
-	becnchmark(b, NewIEEE(), 1024)
+	benchmark(b, NewIEEE(), 1024)
 }
 
 func BenchmarkStdCrc1KB(b *testing.B) {
-	becnchmark(b, crc32.NewIEEE(), 1024)
+	benchmark(b, crc32.NewIEEE(), 1024)
 }
 
 func BenchmarkCrc8KB(b *testing.B) {
-	becnchmark(b, NewIEEE(), 8*1024)
+	benchmark(b, NewIEEE(), 8*1024)
 }
 
 func BenchmarkStdCrc8KB(b *testing.B) {
-	becnchmark(b, crc32.NewIEEE(), 8*1024)
+	benchmark(b, crc32.NewIEEE(), 8*1024)
 }
 
 func BenchmarkCrc32KB(b *testing.B) {
-	becnchmark(b, NewIEEE(), 32*1024)
+	benchmark(b, NewIEEE(), 32*1024)
 }
 
 func BenchmarkStdCrc32KB(b *testing.B) {
-	becnchmark(b, crc32.NewIEEE(), 32*1024)
+	benchmark(b, crc32.NewIEEE(), 32*1024)
 }
 
-func becnchmark(b *testing.B, h hash.Hash32, n int64) {
+func benchmark(b *testing.B, h hash.Hash32, n int64) {
 	b.SetBytes(n)
 	data := make([]byte, n)
 	for i := range data {
