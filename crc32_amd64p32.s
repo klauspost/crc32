@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-#include "textflag.h"
+#define NOSPLIT 4
+#define RODATA 8
 
 // func castagnoliSSE42(crc uint32, p []byte) uint32
 TEXT ·castagnoliSSE42(SB),NOSPLIT,$0
