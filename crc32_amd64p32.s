@@ -53,6 +53,16 @@ done:
 	MOVL AX, ret+16(FP)
 	RET
 
+// func haveCLMUL() bool
+TEXT ·haveCLMUL(SB),NOSPLIT,$0
+    XORQ AX, AX
+    INCL AX
+    CPUID
+    SHRQ $1, CX
+    ANDQ $1, CX
+    MOVB CX, ret+0(FP)
+    RET
+
 // func haveSSE42() bool
 TEXT ·haveSSE42(SB),NOSPLIT,$0
 	XORQ AX, AX
@@ -97,8 +107,8 @@ GLOBL r5<>(SB),RODATA,$8
 // Based on http://www.intel.com/content/dam/www/public/us/en/documents/white-papers/fast-crc-computation-generic-polynomials-pclmulqdq-paper.pdf
 // len(p) must be at least 64, and must be a multiple of 16.
 
-// func ieeeSSE42(crc uint32, p []byte) uint32
-TEXT ·ieeeSSE42(SB),NOSPLIT,$0
+// func ieeeCLMUL(crc uint32, p []byte) uint32
+TEXT ·ieeeCLMUL(SB),NOSPLIT,$0
 	MOVL   crc+0(FP), X0             // CRC value
 	MOVL   p+4(FP), SI  	         // data pointer
 	MOVL   p_len+8(FP), CX          // len(p)

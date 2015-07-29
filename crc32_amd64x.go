@@ -13,17 +13,19 @@ package crc32
 // for SSE 4.1 and 4.2 support.
 func haveSSE41() bool
 func haveSSE42() bool
+func haveCLMUL() bool
 
 // castagnoliSSE42 is defined in crc_amd64.s and uses the SSE4.2 CRC32
 // instruction.
 func castagnoliSSE42(crc uint32, p []byte) uint32
 
-// ieeeSSE42 is defined in crc_amd64.s and uses the SSE4.2 PCLMULQDQ
+// ieeeCLMUL is defined in crc_amd64.s and uses the PCLMULQDQ
 // instruction.
-func ieeeSSE42(crc uint32, p []byte) uint32
+func ieeeCLMUL(crc uint32, p []byte) uint32
 
 var sse41 = haveSSE41()
 var sse42 = haveSSE42()
+var clmul = haveCLMUL()
 
 func updateCastagnoli(crc uint32, p []byte) uint32 {
 	if sse42 {
@@ -33,10 +35,10 @@ func updateCastagnoli(crc uint32, p []byte) uint32 {
 }
 
 func updateIEEE(crc uint32, p []byte) uint32 {
-	if sse42 && sse41 && len(p) >= 64 {
+	if clmul && sse41 && len(p) >= 64 {
 		left := len(p) & 15
 		do := len(p) - left
-		crc := ^ieeeSSE42(^crc, p[:do])
+		crc := ^ieeeCLMUL(^crc, p[:do])
 		if left > 0 {
 			crc = update(crc, IEEETable, p[do:])
 		}
