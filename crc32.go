@@ -135,4 +135,4 @@ func Checksum(data []byte, tab *Table) uint32 { return Update(0, tab, data) }
 
 // ChecksumIEEE returns the CRC-32 checksum of data
 // using the IEEE polynomial.
-func ChecksumIEEE(data []byte) uint32 { return update(0, IEEETable, data) }
+func ChecksumIEEE(data []byte) uint32 { return updateIEEE(0, data) }
