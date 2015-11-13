@@ -7,7 +7,7 @@ This package is a drop-in replacement for the standard library `hash/crc32` pack
 
 # usage
 
-Install using `go get github.com/klauspost/crc32`. This library is based on Go 1.4.2 code and requires Go 1.3 or newer.
+Install using `go get github.com/klauspost/crc32`. This library is based on Go 1.5 code and requires Go 1.3 or newer.
 
 Replace `import "hash/crc32"` with `import "github.com/klauspost/crc32"` and you are good to go.
 
