@@ -83,6 +83,14 @@ func TestGolden(t *testing.T) {
 	}
 }
 
+func BenchmarkCrc40B(b *testing.B) {
+	benchmark(b, NewIEEE(), 40)
+}
+
+func BenchmarkStdCrc40B(b *testing.B) {
+	benchmark(b, crc32.NewIEEE(), 40)
+}
+
 func BenchmarkCrc1KB(b *testing.B) {
 	benchmark(b, NewIEEE(), 1024)
 }
@@ -107,6 +115,38 @@ func BenchmarkStdCrc32KB(b *testing.B) {
 	benchmark(b, crc32.NewIEEE(), 32*1024)
 }
 
+func BenchmarkCastagnoli40B(b *testing.B) {
+	benchmark(b, New(MakeTable(Castagnoli)), 40)
+}
+
+func BenchmarkStdCastagnoli40B(b *testing.B) {
+	benchmark(b, crc32.New(crc32.MakeTable(Castagnoli)), 40)
+}
+
+func BenchmarkCastagnoli1KB(b *testing.B) {
+	benchmark(b, New(MakeTable(Castagnoli)), 1024)
+}
+
+func BenchmarkStdCastagnoli1KB(b *testing.B) {
+	benchmark(b, crc32.New(crc32.MakeTable(Castagnoli)), 1024)
+}
+
+func BenchmarkCastagnoli8KB(b *testing.B) {
+	benchmark(b, New(MakeTable(Castagnoli)), 8*1024)
+}
+
+func BenchmarkStdCastagnoli8KB(b *testing.B) {
+	benchmark(b, crc32.New(crc32.MakeTable(Castagnoli)), 8*1024)
+}
+
+func BenchmarkCastagnoli32KB(b *testing.B) {
+	benchmark(b, New(MakeTable(Castagnoli)), 32*1024)
+}
+
+func BenchmarkStdCastagnoli32KB(b *testing.B) {
+	benchmark(b, crc32.New(crc32.MakeTable(Castagnoli)), 32*1024)
+}
+
 func benchmark(b *testing.B, h hash.Hash32, n int64) {
 	b.SetBytes(n)
 	data := make([]byte, n)
@@ -114,6 +154,12 @@ func benchmark(b *testing.B, h hash.Hash32, n int64) {
 		data[i] = byte(i)
 	}
 	in := make([]byte, 0, h.Size())
+
+	// Warm up
+	h.Reset()
+	h.Write(data)
+	h.Sum(in)
+
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
