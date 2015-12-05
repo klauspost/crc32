@@ -29,7 +29,7 @@ BenchmarkCrc32KB     327.83       3194.20      9.74x
 
 For other tables and "CLMUL"  capable machines the performance is the same as the standard library.
 
-Here are som detailed becnhmarks, comparing to go 1.5 standard library with and without assembler enabled.
+Here are some detailed benchmarks, comparing to go 1.5 standard library with and without assembler enabled.
 
 ```
 Std:   Standard Go 1.5 library
