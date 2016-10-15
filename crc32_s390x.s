@@ -30,36 +30,36 @@
 //      Castagnoli: P'(x) = 0x082f63b78
 
 // IEEE polynomial constants
-DATA ·crclecons+0(SB)/8, $0x0F0E0D0C0B0A0908 // LE-to-BE mask
-DATA ·crclecons+8(SB)/8, $0x0706050403020100
-DATA ·crclecons+16(SB)/8, $0x00000001c6e41596 // R2
-DATA ·crclecons+24(SB)/8, $0x0000000154442bd4 // R1
-DATA ·crclecons+32(SB)/8, $0x00000000ccaa009e // R4
-DATA ·crclecons+40(SB)/8, $0x00000001751997d0 // R3
-DATA ·crclecons+48(SB)/8, $0x0000000000000000
-DATA ·crclecons+56(SB)/8, $0x0000000163cd6124 // R5
-DATA ·crclecons+64(SB)/8, $0x0000000000000000
-DATA ·crclecons+72(SB)/8, $0x00000001F7011641 // u'
-DATA ·crclecons+80(SB)/8, $0x0000000000000000
-DATA ·crclecons+88(SB)/8, $0x00000001DB710641 // P'(x) << 1
+DATA ·crcleconskp+0(SB)/8, $0x0F0E0D0C0B0A0908 // LE-to-BE mask
+DATA ·crcleconskp+8(SB)/8, $0x0706050403020100
+DATA ·crcleconskp+16(SB)/8, $0x00000001c6e41596 // R2
+DATA ·crcleconskp+24(SB)/8, $0x0000000154442bd4 // R1
+DATA ·crcleconskp+32(SB)/8, $0x00000000ccaa009e // R4
+DATA ·crcleconskp+40(SB)/8, $0x00000001751997d0 // R3
+DATA ·crcleconskp+48(SB)/8, $0x0000000000000000
+DATA ·crcleconskp+56(SB)/8, $0x0000000163cd6124 // R5
+DATA ·crcleconskp+64(SB)/8, $0x0000000000000000
+DATA ·crcleconskp+72(SB)/8, $0x00000001F7011641 // u'
+DATA ·crcleconskp+80(SB)/8, $0x0000000000000000
+DATA ·crcleconskp+88(SB)/8, $0x00000001DB710641 // P'(x) << 1
 
-GLOBL ·crclecons(SB), RODATA, $144
+GLOBL ·crcleconskp(SB), RODATA, $144
 
 // Castagonli Polynomial constants
-DATA ·crcclecons+0(SB)/8, $0x0F0E0D0C0B0A0908 // LE-to-BE mask
-DATA ·crcclecons+8(SB)/8, $0x0706050403020100
-DATA ·crcclecons+16(SB)/8, $0x000000009e4addf8 // R2
-DATA ·crcclecons+24(SB)/8, $0x00000000740eef02 // R1
-DATA ·crcclecons+32(SB)/8, $0x000000014cd00bd6 // R4
-DATA ·crcclecons+40(SB)/8, $0x00000000f20c0dfe // R3
-DATA ·crcclecons+48(SB)/8, $0x0000000000000000
-DATA ·crcclecons+56(SB)/8, $0x00000000dd45aab8 // R5
-DATA ·crcclecons+64(SB)/8, $0x0000000000000000
-DATA ·crcclecons+72(SB)/8, $0x00000000dea713f1 // u'
-DATA ·crcclecons+80(SB)/8, $0x0000000000000000
-DATA ·crcclecons+88(SB)/8, $0x0000000105ec76f0 // P'(x) << 1
+DATA ·crccleconskp+0(SB)/8, $0x0F0E0D0C0B0A0908 // LE-to-BE mask
+DATA ·crccleconskp+8(SB)/8, $0x0706050403020100
+DATA ·crccleconskp+16(SB)/8, $0x000000009e4addf8 // R2
+DATA ·crccleconskp+24(SB)/8, $0x00000000740eef02 // R1
+DATA ·crccleconskp+32(SB)/8, $0x000000014cd00bd6 // R4
+DATA ·crccleconskp+40(SB)/8, $0x00000000f20c0dfe // R3
+DATA ·crccleconskp+48(SB)/8, $0x0000000000000000
+DATA ·crccleconskp+56(SB)/8, $0x00000000dd45aab8 // R5
+DATA ·crccleconskp+64(SB)/8, $0x0000000000000000
+DATA ·crccleconskp+72(SB)/8, $0x00000000dea713f1 // u'
+DATA ·crccleconskp+80(SB)/8, $0x0000000000000000
+DATA ·crccleconskp+88(SB)/8, $0x0000000105ec76f0 // P'(x) << 1
 
-GLOBL ·crcclecons(SB), RODATA, $144
+GLOBL ·crccleconskp(SB), RODATA, $144
 
 // func hasVectorFacility() bool
 TEXT ·hasVectorFacility(SB), NOSPLIT, $24-1
@@ -108,7 +108,7 @@ TEXT ·vectorizedIEEE(SB), NOSPLIT, $0
 	MOVD  p+8(FP), R3      // data pointer
 	MOVD  p_len+16(FP), R4 // len(p)
 
-	MOVD $·crclecons(SB), R5
+	MOVD $·crcleconskp(SB), R5
 	BR   vectorizedBody<>(SB)
 
 // func vectorizedCastagnoli(crc uint32, p []byte) uint32
@@ -118,7 +118,7 @@ TEXT ·vectorizedCastagnoli(SB), NOSPLIT, $0
 	MOVD  p_len+16(FP), R4 // len(p)
 
 	// R5: crc-32 constant pool base pointer, constant is used to reduce crc
-	MOVD $·crcclecons(SB), R5
+	MOVD $·crccleconskp(SB), R5
 	BR   vectorizedBody<>(SB)
 
 TEXT vectorizedBody<>(SB), NOSPLIT, $0
