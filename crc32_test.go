@@ -5,8 +5,9 @@
 package crc32
 
 import (
+	crand "crypto/rand"
 	"hash"
-	"math/rand"
+	mrand "math/rand"
 	"testing"
 )
 
@@ -78,11 +79,10 @@ func testCrossCheck(t *testing.T, crcFunc1, crcFunc2 func(crc uint32, b []byte) 
 	lengths := []int{0, 1, 2, 3, 4, 5, 10, 16, 50, 100, 128,
 		500, 501, 502, 503, 504, 505, 512, 1000, 1024, 2000,
 		4030, 4031, 4032, 4033, 4036, 4040, 4048, 4096, 5000, 10000}
-	rng := rand.New(rand.NewSource(42))
 	for _, length := range lengths {
 		p := make([]byte, length)
-		_, _ = rng.Read(p)
-		crcInit := uint32(rand.Int63())
+		_, _ = crand.Read(p)
+		crcInit := uint32(mrand.Int63())
 		crc1 := crcFunc1(crcInit, p)
 		crc2 := crcFunc2(crcInit, p)
 		if crc1 != crc2 {
