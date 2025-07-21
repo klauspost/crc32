@@ -2,32 +2,30 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build !appengine,!gccgo
-
 // AMD64-specific hardware-assisted CRC32 algorithms. See crc32.go for a
 // description of the interface that each architecture-specific file
 // implements.
 
 package crc32
 
-import "unsafe"
+import (
+	"unsafe"
+
+	"github.com/klauspost/cpuid/v2"
+)
 
 // This file contains the code to call the SSE 4.2 version of the Castagnoli
 // and IEEE CRC.
 
-// haveSSE41/haveSSE42/haveCLMUL are defined in crc_amd64.s and use
-// CPUID to test for SSE 4.1, 4.2 and CLMUL support.
-func haveSSE41() bool
-func haveSSE42() bool
-func haveCLMUL() bool
-
-// castagnoliSSE42 is defined in crc32_amd64.s and uses the SSE4.2 CRC32
+// castagnoliSSE42 is defined in crc32_amd64.s and uses the SSE 4.2 CRC32
 // instruction.
+//
 //go:noescape
 func castagnoliSSE42(crc uint32, p []byte) uint32
 
-// castagnoliSSE42Triple is defined in crc32_amd64.s and uses the SSE4.2 CRC32
+// castagnoliSSE42Triple is defined in crc32_amd64.s and uses the SSE 4.2 CRC32
 // instruction.
+//
 //go:noescape
 func castagnoliSSE42Triple(
 	crcA, crcB, crcC uint32,
@@ -37,11 +35,9 @@ func castagnoliSSE42Triple(
 
 // ieeeCLMUL is defined in crc_amd64.s and uses the PCLMULQDQ
 // instruction as well as SSE 4.1.
+//
 //go:noescape
 func ieeeCLMUL(crc uint32, p []byte) uint32
-
-var sse42 = haveSSE42()
-var useFastIEEE = haveCLMUL() && haveSSE41()
 
 const castagnoliK1 = 168
 const castagnoliK2 = 1344
@@ -52,11 +48,11 @@ var castagnoliSSE42TableK1 *sse42Table
 var castagnoliSSE42TableK2 *sse42Table
 
 func archAvailableCastagnoli() bool {
-	return sse42
+	return cpuid.CPU.Has(cpuid.SSE42)
 }
 
 func archInitCastagnoli() {
-	if !sse42 {
+	if !cpuid.CPU.Has(cpuid.SSE42) {
 		panic("arch-specific Castagnoli not available")
 	}
 	castagnoliSSE42TableK1 = new(sse42Table)
@@ -88,7 +84,7 @@ func castagnoliShift(table *sse42Table, crc uint32) uint32 {
 }
 
 func archUpdateCastagnoli(crc uint32, p []byte) uint32 {
-	if !sse42 {
+	if !cpuid.CPU.Has(cpuid.SSE42) {
 		panic("not available")
 	}
 
@@ -199,13 +195,13 @@ func archUpdateCastagnoli(crc uint32, p []byte) uint32 {
 }
 
 func archAvailableIEEE() bool {
-	return useFastIEEE
+	return cpuid.CPU.Supports(cpuid.SSE42, cpuid.CLMUL)
 }
 
 var archIeeeTable8 *slicing8Table
 
 func archInitIEEE() {
-	if !useFastIEEE {
+	if !cpuid.CPU.Supports(cpuid.SSE42, cpuid.CLMUL) {
 		panic("not available")
 	}
 	// We still use slicing-by-8 for small buffers.
@@ -213,7 +209,7 @@ func archInitIEEE() {
 }
 
 func archUpdateIEEE(crc uint32, p []byte) uint32 {
-	if !useFastIEEE {
+	if !cpuid.CPU.Supports(cpuid.SSE42, cpuid.CLMUL) {
 		panic("not available")
 	}
 

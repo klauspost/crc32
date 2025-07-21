@@ -6,7 +6,7 @@ package crc32_test
 
 import (
 	"fmt"
-	"hash/crc32"
+	"github.com/klauspost/crc32"
 )
 
 func ExampleMakeTable() {
