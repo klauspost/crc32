@@ -21,6 +21,20 @@ Replace `import "hash/crc32"` with `import "github.com/klauspost/crc32"` and you
 
 # performance
 
+AVX512 are enabled above 1KB input size. This rather high limit is due to AVX512 may be slower to ramp up than 
+the regular SSE4 implementation for smaller inputs. This is not reflected in the benchmarks below.
+
+| Benchmark                                     | Old MB/s | New MB/s | Speedup |
+|-----------------------------------------------|----------|----------|---------|
+| BenchmarkCRC32/poly=IEEE/size=512/align=0-32  | 17996.39 | 17969.94 | 1.00x   |
+| BenchmarkCRC32/poly=IEEE/size=512/align=1-32  | 18021.48 | 17945.55 | 1.00x   |
+| BenchmarkCRC32/poly=IEEE/size=1kB/align=0-32  | 19921.70 | 45613.77 | 2.29x   |
+| BenchmarkCRC32/poly=IEEE/size=1kB/align=1-32  | 19946.60 | 46819.09 | 2.35x   |
+| BenchmarkCRC32/poly=IEEE/size=4kB/align=0-32  | 21538.65 | 48600.93 | 2.26x   |
+| BenchmarkCRC32/poly=IEEE/size=4kB/align=1-32  | 21449.20 | 48477.84 | 2.26x   |
+| BenchmarkCRC32/poly=IEEE/size=32kB/align=0-32 | 21785.49 | 46013.10 | 2.11x   |
+| BenchmarkCRC32/poly=IEEE/size=32kB/align=1-32 | 21946.47 | 45954.10 | 2.09x   |
+
 
 # license
 
