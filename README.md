@@ -1,92 +1,41 @@
-# Not needed!
+# 2025 revival
 
-If you use Go 1.7 or later, there is no reason to use this package any more, since optimizations have been merged into the standard library.
+For IEEE checksums AVX512 can be used to speed up CRC32 checksums by approximately 2x.
 
-The following reposiitory and documentation is left for historical reasons (and to not break exisiting code).
+Castagnoli checksums (CRC32C) can also be computer with AVX512, 
+but the performance gain is not as significant enough for the downsides of using it at this point.
 
 # crc32
 
-This package is a drop-in replacement for the standard library `hash/crc32` package, that features SSE 4.2 optimizations on x64 platforms, for a 10x speedup.
-
-[![Build Status](https://travis-ci.org/klauspost/crc32.svg?branch=master)](https://travis-ci.org/klauspost/crc32)
+This package is a drop-in replacement for the standard library `hash/crc32` package, 
+that features AVX 512 optimizations on x64 platforms, for a 2x speedup for IEEE CRC32 checksums.
 
 # usage
 
-Install using `go get github.com/klauspost/crc32`. This library is based on Go 1.5 code and requires Go 1.3 or newer.
+Install using `go get github.com/klauspost/crc32`. This library is based on Go 1.24
 
 Replace `import "hash/crc32"` with `import "github.com/klauspost/crc32"` and you are good to go.
 
 # changes
-* Oct 20, 2016: Changes have been merged to upstream Go. Package updated to match.
-* Dec 4, 2015: Uses the "slice-by-8" trick more extensively, which gives a 1.5 to 2.5x speedup if assembler is unavailable.
-
+* 2025: Revived and updated to Go 1.24, with AVX 512 optimizations.
 
 # performance
 
-For *Go 1.7* performance is equivalent to the standard library. So if you use this package for Go 1.7 you can switch back.
+AVX512 are enabled above 1KB input size. This rather high limit is due to AVX512 may be slower to ramp up than 
+the regular SSE4 implementation for smaller inputs. This is not reflected in the benchmarks below.
 
+| Benchmark                                     | Old MB/s | New MB/s | Speedup |
+|-----------------------------------------------|----------|----------|---------|
+| BenchmarkCRC32/poly=IEEE/size=512/align=0-32  | 17996.39 | 17969.94 | 1.00x   |
+| BenchmarkCRC32/poly=IEEE/size=512/align=1-32  | 18021.48 | 17945.55 | 1.00x   |
+| BenchmarkCRC32/poly=IEEE/size=1kB/align=0-32  | 19921.70 | 45613.77 | 2.29x   |
+| BenchmarkCRC32/poly=IEEE/size=1kB/align=1-32  | 19946.60 | 46819.09 | 2.35x   |
+| BenchmarkCRC32/poly=IEEE/size=4kB/align=0-32  | 21538.65 | 48600.93 | 2.26x   |
+| BenchmarkCRC32/poly=IEEE/size=4kB/align=1-32  | 21449.20 | 48477.84 | 2.26x   |
+| BenchmarkCRC32/poly=IEEE/size=32kB/align=0-32 | 21785.49 | 46013.10 | 2.11x   |
+| BenchmarkCRC32/poly=IEEE/size=32kB/align=1-32 | 21946.47 | 45954.10 | 2.09x   |
 
-For IEEE tables (the most common), there is approximately a factor 10 speedup with "CLMUL" (Carryless multiplication) instruction:
-```
-benchmark            old ns/op     new ns/op     delta
-BenchmarkCrc32KB     99955         10258         -89.74%
-
-benchmark            old MB/s     new MB/s     speedup
-BenchmarkCrc32KB     327.83       3194.20      9.74x
-```
-
-For other tables and "CLMUL"  capable machines the performance is the same as the standard library.
-
-Here are some detailed benchmarks, comparing to go 1.5 standard library with and without assembler enabled.
-
-```
-Std:   Standard Go 1.5 library
-Crc:   Indicates IEEE type CRC.
-40B:   Size of each slice encoded.
-NoAsm: Assembler was disabled (ie. not an AMD64 or SSE 4.2+ capable machine).
-Castagnoli: Castagnoli CRC type.
-
-BenchmarkStdCrc40B-4            10000000               158 ns/op         252.88 MB/s
-BenchmarkCrc40BNoAsm-4          20000000               105 ns/op         377.38 MB/s (slice8)
-BenchmarkCrc40B-4               20000000               105 ns/op         378.77 MB/s (slice8)
-
-BenchmarkStdCrc1KB-4              500000              3604 ns/op         284.10 MB/s
-BenchmarkCrc1KBNoAsm-4           1000000              1463 ns/op         699.79 MB/s (slice8)
-BenchmarkCrc1KB-4                3000000               396 ns/op        2583.69 MB/s (asm)
-
-BenchmarkStdCrc8KB-4              200000             11417 ns/op         717.48 MB/s (slice8)
-BenchmarkCrc8KBNoAsm-4            200000             11317 ns/op         723.85 MB/s (slice8)
-BenchmarkCrc8KB-4                 500000              2919 ns/op        2805.73 MB/s (asm)
-
-BenchmarkStdCrc32KB-4              30000             45749 ns/op         716.24 MB/s (slice8)
-BenchmarkCrc32KBNoAsm-4            30000             45109 ns/op         726.42 MB/s (slice8)
-BenchmarkCrc32KB-4                100000             11497 ns/op        2850.09 MB/s (asm)
-
-BenchmarkStdNoAsmCastagnol40B-4 10000000               161 ns/op         246.94 MB/s
-BenchmarkStdCastagnoli40B-4     50000000              28.4 ns/op        1410.69 MB/s (asm)
-BenchmarkCastagnoli40BNoAsm-4   20000000               100 ns/op         398.01 MB/s (slice8)
-BenchmarkCastagnoli40B-4        50000000              28.2 ns/op        1419.54 MB/s (asm)
-
-BenchmarkStdNoAsmCastagnoli1KB-4  500000              3622 ns/op        282.67 MB/s
-BenchmarkStdCastagnoli1KB-4     10000000               144 ns/op        7099.78 MB/s (asm)
-BenchmarkCastagnoli1KBNoAsm-4    1000000              1475 ns/op         694.14 MB/s (slice8)
-BenchmarkCastagnoli1KB-4        10000000               146 ns/op        6993.35 MB/s (asm)
-
-BenchmarkStdNoAsmCastagnoli8KB-4  50000              28781 ns/op         284.63 MB/s
-BenchmarkStdCastagnoli8KB-4      1000000              1029 ns/op        7957.89 MB/s (asm)
-BenchmarkCastagnoli8KBNoAsm-4     200000             11410 ns/op         717.94 MB/s (slice8)
-BenchmarkCastagnoli8KB-4         1000000              1000 ns/op        8188.71 MB/s (asm)
-
-BenchmarkStdNoAsmCastagnoli32KB-4  10000            115426 ns/op         283.89 MB/s
-BenchmarkStdCastagnoli32KB-4      300000              4065 ns/op        8059.13 MB/s (asm)
-BenchmarkCastagnoli32KBNoAsm-4     30000             45171 ns/op         725.41 MB/s (slice8)
-BenchmarkCastagnoli32KB-4         500000              4077 ns/op        8035.89 MB/s (asm)
-```
-
-The IEEE assembler optimizations has been submitted and will be part of the Go 1.6 standard library.
-
-However, the improved use of slice-by-8 has not, but will probably be submitted for Go 1.7.
 
 # license
 
-Standard Go license. Changes are Copyright (c) 2015 Klaus Post under same conditions.
+Standard Go license. See [LICENSE](LICENSE) for details.

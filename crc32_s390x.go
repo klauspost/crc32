@@ -2,28 +2,28 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build s390x
-
 package crc32
+
+import "internal/cpu"
 
 const (
 	vxMinLen    = 64
 	vxAlignMask = 15 // align to 16 bytes
 )
 
-// hasVectorFacility reports whether the machine has the z/Architecture
+// hasVX reports whether the machine has the z/Architecture
 // vector facility installed and enabled.
-func hasVectorFacility() bool
-
-var hasVX = hasVectorFacility()
+var hasVX = cpu.S390X.HasVX
 
 // vectorizedCastagnoli implements CRC32 using vector instructions.
 // It is defined in crc32_s390x.s.
+//
 //go:noescape
 func vectorizedCastagnoli(crc uint32, p []byte) uint32
 
 // vectorizedIEEE implements CRC32 using vector instructions.
 // It is defined in crc32_s390x.s.
+//
 //go:noescape
 func vectorizedIEEE(crc uint32, p []byte) uint32
 
