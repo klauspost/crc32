@@ -220,7 +220,7 @@ func archUpdateIEEE(crc uint32, p []byte) uint32 {
 	}
 
 	if len(p) >= 64 {
-		if len(p) >= 1024 {
+		if len(p) >= 1024 && cpu.X86.HasAVX512F && cpu.X86.HasAVX512VL && cpu.X86.HasAVX512VPCLMULQDQ && cpu.X86.HasPCLMULQDQ {
 			left := len(p) & 15
 			do := len(p) - left
 			crc = ^ieeeCLMULAvx512(^crc, p[:do])
