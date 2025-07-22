@@ -11,7 +11,7 @@ package crc32
 import (
 	"unsafe"
 
-	"github.com/klauspost/cpuid/v2"
+	"golang.org/x/sys/cpu"
 )
 
 // This file contains the code to call the SSE 4.2 version of the Castagnoli
@@ -39,6 +39,12 @@ func castagnoliSSE42Triple(
 //go:noescape
 func ieeeCLMUL(crc uint32, p []byte) uint32
 
+// ieeeCLMUL is defined in crc_amd64.s and uses the PCLMULQDQ
+// instruction as well as SSE 4.1.
+//
+//go:noescape
+func ieeeCLMULAvx512(crc uint32, p []byte) uint32
+
 const castagnoliK1 = 168
 const castagnoliK2 = 1344
 
@@ -48,11 +54,11 @@ var castagnoliSSE42TableK1 *sse42Table
 var castagnoliSSE42TableK2 *sse42Table
 
 func archAvailableCastagnoli() bool {
-	return cpuid.CPU.Has(cpuid.SSE42)
+	return cpu.X86.HasSSE42
 }
 
 func archInitCastagnoli() {
-	if !cpuid.CPU.Has(cpuid.SSE42) {
+	if !cpu.X86.HasSSE42 {
 		panic("arch-specific Castagnoli not available")
 	}
 	castagnoliSSE42TableK1 = new(sse42Table)
@@ -84,7 +90,7 @@ func castagnoliShift(table *sse42Table, crc uint32) uint32 {
 }
 
 func archUpdateCastagnoli(crc uint32, p []byte) uint32 {
-	if !cpuid.CPU.Has(cpuid.SSE42) {
+	if !cpu.X86.HasSSE42 {
 		panic("not available")
 	}
 
@@ -195,13 +201,13 @@ func archUpdateCastagnoli(crc uint32, p []byte) uint32 {
 }
 
 func archAvailableIEEE() bool {
-	return cpuid.CPU.Supports(cpuid.SSE42, cpuid.CLMUL)
+	return cpu.X86.HasPCLMULQDQ && cpu.X86.HasSSE41
 }
 
 var archIeeeTable8 *slicing8Table
 
 func archInitIEEE() {
-	if !cpuid.CPU.Supports(cpuid.SSE42, cpuid.CLMUL) {
+	if !cpu.X86.HasPCLMULQDQ || !cpu.X86.HasSSE41 {
 		panic("not available")
 	}
 	// We still use slicing-by-8 for small buffers.
@@ -209,15 +215,22 @@ func archInitIEEE() {
 }
 
 func archUpdateIEEE(crc uint32, p []byte) uint32 {
-	if !cpuid.CPU.Supports(cpuid.SSE42, cpuid.CLMUL) {
+	if !cpu.X86.HasPCLMULQDQ || !cpu.X86.HasSSE41 {
 		panic("not available")
 	}
 
 	if len(p) >= 64 {
-		left := len(p) & 15
-		do := len(p) - left
-		crc = ^ieeeCLMUL(^crc, p[:do])
-		p = p[do:]
+		if len(p) >= 1024 {
+			left := len(p) & 15
+			do := len(p) - left
+			crc = ^ieeeCLMULAvx512(^crc, p[:do])
+			p = p[do:]
+		} else {
+			left := len(p) & 15
+			do := len(p) - left
+			crc = ^ieeeCLMUL(^crc, p[:do])
+			p = p[do:]
+		}
 	}
 	if len(p) == 0 {
 		return crc
