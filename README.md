@@ -35,6 +35,7 @@ the regular SSE4 implementation for smaller inputs. This is not reflected in the
 | BenchmarkCRC32/poly=IEEE/size=32kB/align=0-32 | 21785.49 | 46013.10 | 2.11x   |
 | BenchmarkCRC32/poly=IEEE/size=32kB/align=1-32 | 21946.47 | 45954.10 | 2.09x   |
 
+cpu: AMD Ryzen 9 9950X 16-Core Processor
 
 # license
 
