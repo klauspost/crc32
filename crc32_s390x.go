@@ -4,7 +4,7 @@
 
 package crc32
 
-import "internal/cpu"
+import "golang.org/x/sys/cpu"
 
 const (
 	vxMinLen    = 64
