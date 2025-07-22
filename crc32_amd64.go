@@ -39,6 +39,12 @@ func castagnoliSSE42Triple(
 //go:noescape
 func ieeeCLMUL(crc uint32, p []byte) uint32
 
+// castagnoliCLMULAvx512 is defined in crc_amd64.s and uses the PCLMULQDQ
+// instruction as well as SSE 4.1.
+//
+//go:noescape
+func castagnoliCLMULAvx512(crc uint32, p []byte) uint32
+
 // ieeeCLMUL is defined in crc_amd64.s and uses the PCLMULQDQ
 // instruction as well as SSE 4.1.
 //
@@ -153,6 +159,14 @@ func archUpdateCastagnoli(crc uint32, p []byte) uint32 {
 	// values.
 
 	crc = ^crc
+
+	// Disabled, since it is not significantly faster than the SSE 4.2 version, even on Zen 5.
+	if false && len(p) >= 2048 && cpu.X86.HasAVX512F && cpu.X86.HasAVX512VL && cpu.X86.HasAVX512VPCLMULQDQ && cpu.X86.HasPCLMULQDQ {
+		left := len(p) & 15
+		do := len(p) - left
+		crc = castagnoliCLMULAvx512(crc, p[:do])
+		return ^castagnoliSSE42(crc, p[do:])
+	}
 
 	// If a buffer is long enough to use the optimization, process the first few
 	// bytes to align the buffer to an 8 byte boundary (if necessary).

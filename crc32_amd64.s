@@ -396,3 +396,132 @@ finish:
 	MOVL   AX, ret+32(FP)
 	VZEROUPPER
 	RET
+
+// Castagonli Polynomial constants
+DATA r2r1C<>+0(SB)/8, $0x0740eef02
+DATA r2r1C<>+8(SB)/8, $0x09e4addf8
+DATA r2r1C<>+16(SB)/8, $0x0740eef02
+DATA r2r1C<>+24(SB)/8, $0x09e4addf8
+DATA r2r1C<>+32(SB)/8, $0x0740eef02
+DATA r2r1C<>+40(SB)/8, $0x09e4addf8
+DATA r2r1C<>+48(SB)/8, $0x0740eef02
+DATA r2r1C<>+56(SB)/8, $0x09e4addf8
+GLOBL r2r1C<>(SB), RODATA, $64
+
+DATA r4r3C<>+0(SB)/8, $0xf20c0dfe
+DATA r4r3C<>+8(SB)/8, $0x14cd00bd6
+DATA rupolyC<>+0(SB)/8, $0x105ec76f0
+DATA rupolyC<>+8(SB)/8, $0xdea713f1
+DATA r5C<>+0(SB)/8, $0xdd45aab8
+
+GLOBL r4r3C<>(SB), RODATA, $16
+GLOBL rupolyC<>(SB), RODATA, $16
+GLOBL r5C<>(SB), RODATA, $8
+
+// Based on https://www.intel.com/content/dam/www/public/us/en/documents/white-papers/fast-crc-computation-generic-polynomials-pclmulqdq-paper.pdf
+// len(p) must be at least 128, and must be a multiple of 16.
+
+// func castagnoliCLMULAvx512(crc uint32, p []byte) uint32
+TEXT ·castagnoliCLMULAvx512(SB), NOSPLIT, $0
+	MOVL crc+0(FP), AX    // Initial CRC value
+	MOVQ p+8(FP), SI      // data pointer
+	MOVQ p_len+16(FP), CX // len(p)
+
+	VPXORQ    Z0, Z0, Z0
+	VMOVDQU64 (SI), Z1
+	VMOVQ     AX, X0
+	VPXORQ    Z0, Z1, Z1 // Merge initial CRC value into Z1
+	ADDQ      $64, SI    // buf+=64
+	SUBQ      $64, CX    // len-=64
+
+	VMOVDQU64 r2r1C<>+0(SB), Z0
+
+loopback64:
+	// Load next early
+	VMOVDQU64 (SI), Z11
+
+	VPCLMULQDQ $0x11, Z0, Z1, Z5
+	VPCLMULQDQ $0, Z0, Z1, Z1
+
+	VPTERNLOGD $0x96, Z11, Z5, Z1 // Combine results with xor into Z1
+
+	ADDQ $0x40, DI
+	ADDQ $64, SI    // buf+=64
+	SUBQ $64, CX    // len-=64
+	CMPQ CX, $64    // Less than 64 bytes left?
+	JGE  loopback64
+
+	// Fold result into a single register (X1)
+remain64:
+	VEXTRACTF32X4 $1, Z1, X2 // X2: Second 128-bit lane
+	VEXTRACTF32X4 $2, Z1, X3 // X3: Third 128-bit lane
+	VEXTRACTF32X4 $3, Z1, X4 // X4: Fourth 128-bit lane
+
+	MOVOA r4r3C<>+0(SB), X0
+
+	MOVOA     X1, X5
+	PCLMULQDQ $0, X0, X1
+	PCLMULQDQ $0x11, X0, X5
+	PXOR      X5, X1
+	PXOR      X2, X1
+
+	MOVOA     X1, X5
+	PCLMULQDQ $0, X0, X1
+	PCLMULQDQ $0x11, X0, X5
+	PXOR      X5, X1
+	PXOR      X3, X1
+
+	MOVOA     X1, X5
+	PCLMULQDQ $0, X0, X1
+	PCLMULQDQ $0x11, X0, X5
+	PXOR      X5, X1
+	PXOR      X4, X1
+
+	// If there is less than 16 bytes left we are done
+	CMPQ CX, $16
+	JB   finish
+
+	// Encode 16 bytes
+remain16:
+	MOVOU     (SI), X10
+	MOVOA     X1, X5
+	PCLMULQDQ $0, X0, X1
+	PCLMULQDQ $0x11, X0, X5
+	PXOR      X5, X1
+	PXOR      X10, X1
+	SUBQ      $16, CX
+	ADDQ      $16, SI
+	CMPQ      CX, $16
+	JGE       remain16
+
+finish:
+	// Fold final result into 32 bits and return it
+	PCMPEQB   X3, X3
+	PCLMULQDQ $1, X1, X0
+	PSRLDQ    $8, X1
+	PXOR      X0, X1
+
+	MOVOA X1, X2
+	MOVQ  r5C<>+0(SB), X0
+
+	// Creates 32 bit mask. Note that we don't care about upper half.
+	PSRLQ $32, X3
+
+	PSRLDQ    $4, X2
+	PAND      X3, X1
+	PCLMULQDQ $0, X0, X1
+	PXOR      X2, X1
+
+	MOVOA rupolyC<>+0(SB), X0
+
+	MOVOA     X1, X2
+	PAND      X3, X1
+	PCLMULQDQ $0x10, X0, X1
+	PAND      X3, X1
+	PCLMULQDQ $0, X0, X1
+	PXOR      X2, X1
+
+	PEXTRD $1, X1, AX
+	MOVL   AX, ret+32(FP)
+	VZEROUPPER
+	RET

@@ -1,0 +1,59 @@
+name: Go
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        go-version: [1.23.x, 1.24.x]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    env:
+      CGO_ENABLED: 0
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: ${{ matrix.go-version }}
+
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Vet
+      run: go vet ./...
+
+    - name: Test
+      run: go test
+
+    - name: Test Noasm
+      run: go test -tags=noasm
+
+    - name: Test Race
+      env:
+        CGO_ENABLED: 1
+      run: go test -cpu="1,4" -short -race -v .
+
+  build-special:
+    env:
+      CGO_ENABLED: 0
+    runs-on: ubuntu-latest
+    steps:
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.24.x
+
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: fmt
+      run: diff <(gofmt -d .) <(printf "")
+
+    - name: Test 386
+      run: GOOS=linux GOARCH=386 go test -short ./...
