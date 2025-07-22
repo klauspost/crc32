@@ -119,6 +119,18 @@ func TestSimple(t *testing.T) {
 	})
 }
 
+// binaryAppender is the interface implemented by an object
+// that can append the binary representation of itself.
+// If a type implements both [BinaryAppender] and [BinaryMarshaler],
+// then v.MarshalBinary() must be semantically identical to v.AppendBinary(nil).
+type binaryAppender interface {
+	// AppendBinary appends the binary representation of itself to the end of b
+	// (allocating a larger slice if necessary) and returns the updated slice.
+	//
+	// Implementations must not retain b, nor mutate any bytes within b[:len(b)].
+	AppendBinary(b []byte) ([]byte, error)
+}
+
 func TestGoldenMarshal(t *testing.T) {
 	t.Run("IEEE", func(t *testing.T) {
 		for _, g := range golden {
@@ -133,7 +145,7 @@ func TestGoldenMarshal(t *testing.T) {
 				continue
 			}
 
-			stateAppend, err := h.(encoding.BinaryAppender).AppendBinary(make([]byte, 4, 32))
+			stateAppend, err := h.(binaryAppender).AppendBinary(make([]byte, 4, 32))
 			if err != nil {
 				t.Errorf("could not marshal: %v", err)
 				continue
@@ -177,7 +189,7 @@ func TestGoldenMarshal(t *testing.T) {
 				continue
 			}
 
-			stateAppend, err := h.(encoding.BinaryAppender).AppendBinary(make([]byte, 4, 32))
+			stateAppend, err := h.(binaryAppender).AppendBinary(make([]byte, 4, 32))
 			if err != nil {
 				t.Errorf("could not marshal: %v", err)
 				continue
